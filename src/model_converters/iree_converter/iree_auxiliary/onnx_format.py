@@ -1,4 +1,5 @@
 import subprocess
+import os
 from converter import IREEConverter
 
 
@@ -7,12 +8,25 @@ class IREEConverterONNXFormat(IREEConverter):
         super().__init__(args)
         self.model_path = args.get('model_path', None)
         self.onnx_opset_version = args.get('onnx_opset_version', None)
+        self._validate_arguments()
 
     @property
     def source_framework(self):
         return 'ONNX'
 
+    def _validate_arguments(self):
+        if self.model_path is None or self.model_path == '':
+            raise ValueError("The model_path parameter is required for ONNX conversion.")
+
+        if not os.path.exists(self.model_path):
+            raise FileNotFoundError(f"Model file not found: {self.model_path}")
+
+        if self.onnx_opset_version is None:
+            raise ValueError("The onnx_opset_version parameter is required for ONNX conversion.")
+
     def _convert_model_from_framework(self):
+        if not os.path.exists(self.output_mlir):
+            os.mkdir(self.output_mlir)
         import_args = [
             "iree-import-onnx",
             self.model_path,

@@ -1,5 +1,5 @@
 import importlib
-import subprocess
+import os
 from converter import IREEConverter
 
 
@@ -12,10 +12,41 @@ class IREEConverterPyTorchFormat(IREEConverter):
         self.model_weights = args.get('model_weights', None)
         self.module = args.get('torch_module', None)
         self.input_shape = args.get('input_shape', None)
+        self._validate_arguments()
 
     @property
     def source_framework(self):
         return 'PyTorch'
+    
+    def _validate_arguments(self):
+        if self.input_shape is None:
+            raise ValueError("The input_shape parameter is required for PyTorch conversion.")
+        
+        # Check load methods:
+        # 1. model_path (load from file)
+        # 2. module + model_name (load from torch module)
+        has_model_path = self.model_path is not None and self.model_path != ''
+        has_module_model = (self.module is not None and self.module != '' and 
+                          self.model_name is not None and self.model_name != '')
+        
+        if not has_model_path and not has_module_model:
+            raise ValueError(
+                "For PyTorch conversion, you must specify either model_path, "
+                "or torch_module and model_name"
+            )
+        
+        if has_model_path and has_module_model:
+            raise ValueError(
+                "Provided incompatible parameters for PyTorch conversion (model_path and torch_module+model_name). "
+                "Please choose only one method of this."
+            )
+
+        if has_model_path and not os.path.exists(self.model_path):
+            raise FileNotFoundError(f"Model file not found: {self.model_path}")
+
+        if (self.model_weights is not None and self.model_weights != '' and 
+            not os.path.exists(self.model_weights)):
+            raise FileNotFoundError(f"Model weights not found: {self.model_weights}")
 
     def __get_model_from_path(self):
         self.log.info(f'Loading model from path {self.model_path}')
@@ -49,5 +80,7 @@ class IREEConverterPyTorchFormat(IREEConverter):
             model = self.__get_model_from_path()
         example_arg = self.torch.randn(*self.input_shape)
         export_output = self.aot.export(model, example_arg)
+        if not os.path.exists(self.output_mlir):
+            os.mkdir(self.output_mlir)
         export_output.save_mlir(self.output_mlir)
         return

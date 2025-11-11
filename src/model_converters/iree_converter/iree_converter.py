@@ -18,6 +18,7 @@ def cli_argument_parser():
                         help='Source model framework',
                         required=True,
                         type=str,
+                        choices=['onnx', 'pytorch'],
                         dest='source_framework')
     parser.add_argument('-mn', '--model_name',
                         help='Model name.',
