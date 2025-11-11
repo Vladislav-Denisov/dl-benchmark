@@ -12,6 +12,11 @@ from transformer import IREETransformer
 
 import numpy as np
 
+sys.path.append(str(Path(__file__).resolve().parents[1].joinpath('model_converters',
+                                                                 'iree_converter',
+                                                                 'iree_auxiliary')))
+from compiler import IREECompiler  # noqa: E402
+
 sys.path.append(str(Path(__file__).resolve().parents[1].joinpath('utils')))
 from logger_conf import configure_logger  # noqa: E402
 
@@ -29,7 +34,7 @@ def cli_argument_parser():
 
     
     parser.add_argument('-m', '--model',
-                        help='Path to .vmfb file with compiled model.',
+                        help='Path to .vmfb file with compiled model or .mlir.',
                         required=True,
                         type=str,
                         dest='model')
@@ -123,21 +128,37 @@ def cli_argument_parser():
                         type=int,
                         nargs=3,
                         dest='channel_swap')
-    parser.add_argument('-d', '--device',
-                        help='Specify the target device to infer (CPU by default)',
-                        default='CPU',
+    parser.add_argument('-tb', '--target_backend',
+                        help='Target backend, for example "llvm-cpu" for CPU.',
+                        default='llvm-cpu',
                         type=str,
-                        dest='device')
+                        dest='target_backend')
+    parser.add_argument('--opt_level',
+                        help='The optimization level of the task extractions.',
+                        type=int,
+                        choices=[0, 1, 2, 3],
+                        default=2)
+    parser.add_argument('--extra_compile_args',
+                        help='The extra arguments for MLIR compilation.',
+                        type=str,
+                        nargs=argparse.REMAINDER,
+                        default=[])
 
     return parser.parse_args()
 
 
-def load_iree_model(model_path):
+def compile_mlir(mlir_path, target_backend, opt_level, extra_compile_args):
+    try:
+        log.info(f'Starting model compilation')
+        return IREECompiler.compile(mlir_path, target_backend, opt_level, extra_compile_args)
+    except Exception as e:
+        log.error(f"Failed to compile MLIR: {e}")
+        raise
+
+
+def load_iree_model(vmfb_buffer):
     try:
         config = ireert.Config('local-task')
-
-        with open(model_path, 'rb') as f:
-            vmfb_buffer = f.read()
 
         vm_module = ireert.VmModule.from_flatbuffer(config.vm_instance, vmfb_buffer)
         context = ireert.SystemContext(config=config)
@@ -260,16 +281,25 @@ def main():
         report_writer.update_configuration_setup(
             batch_size=args.batch_size,
             iterations_num=args.number_iter,
-            target_device=args.device
+            target_device=args.target_backend
         )
 
-        model_context = load_iree_model(args.model)
+        file_type = args.model.split('.')[-1]
+        if file_type == 'mlir':
+            vmfb_buffer = compile_mlir(args.model, args.target_backend, args.opt_level, args.extra_compile_args)
+        elif file_type == 'vmfb':
+            with open(args.model, 'rb') as f:
+                vmfb_buffer = f.read()
+        else:
+            raise ValueError(f'The file type {file_type} is not supported')
+
+        model_context = load_iree_model(vmfb_buffer)
         inference_func = get_inference_function(model_context, args.function_name)
 
         log.info(f'Preparing input data: {args.input}')
         io.prepare_input(model_context, args.input)
 
-        log.info(f'Starting inference ({args.number_iter} iterations) on {args.device}')
+        log.info(f'Starting inference ({args.number_iter} iterations) on {args.target_backend}')
         result, inference_time = inference_iree(
             inference_func,
             args.number_iter,
