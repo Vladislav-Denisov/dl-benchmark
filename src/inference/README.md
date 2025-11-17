@@ -1569,4 +1569,4 @@ python3 inference_iree.py \
 [dgl]: https://www.dgl.ai/pages/start.html
 [ogb]: https://ogb.stanford.edu/
 [tensorflow-gpu]: https://www.tensorflow.org/install/pip
-[iree]: https://iree.dev/
+[iree]: https://iree.dev

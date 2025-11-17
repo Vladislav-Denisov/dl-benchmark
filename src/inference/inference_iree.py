@@ -1,4 +1,5 @@
 import argparse
+import os
 import sys
 import traceback
 from pathlib import Path
@@ -25,14 +26,13 @@ log = configure_logger()
 try:
     import iree.runtime as ireert  # noqa: E402
 except ImportError as e:
-    log.error(f"IREE import error: {e}")
+    log.error(f'IREE import error: {e}')
     sys.exit(1)
 
 
 def cli_argument_parser():
     parser = argparse.ArgumentParser()
 
-    
     parser.add_argument('-m', '--model',
                         help='Path to .vmfb file with compiled model or .mlir.',
                         required=True,
@@ -129,12 +129,12 @@ def cli_argument_parser():
                         nargs=3,
                         dest='channel_swap')
     parser.add_argument('-tb', '--target_backend',
-                        help='Target backend, for example "llvm-cpu" for CPU.',
+                        help='Target backend, for example `llvm-cpu` for CPU.',
                         default='llvm-cpu',
                         type=str,
                         dest='target_backend')
     parser.add_argument('--opt_level',
-                        help='The optimization level of the task extractions.',
+                        help='The optimization level of the compilation.',
                         type=int,
                         choices=[0, 1, 2, 3],
                         default=2)
@@ -149,38 +149,67 @@ def cli_argument_parser():
 
 def compile_mlir(mlir_path, target_backend, opt_level, extra_compile_args):
     try:
-        log.info(f'Starting model compilation')
+        log.info('Starting model compilation')
         return IREECompiler.compile(mlir_path, target_backend, opt_level, extra_compile_args)
     except Exception as e:
-        log.error(f"Failed to compile MLIR: {e}")
+        log.error(f'Failed to compile MLIR: {e}')
         raise
 
 
-def load_iree_model(vmfb_buffer):
+def load_model_buffer(model_path, target_backend, opt_level, extra_compile_args):
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f'Model file not found: {model_path}')
+
+    file_type = model_path.split('.')[-1]
+
+    if file_type == 'mlir':
+        if target_backend is None:
+            raise ValueError('target_backend is required for MLIR compilation')
+        vmfb_buffer = compile_mlir(model_path, target_backend, opt_level, extra_compile_args)
+    elif file_type == 'vmfb':
+        with open(model_path, 'rb') as f:
+            vmfb_buffer = f.read()
+    else:
+        raise ValueError(f'The file type {file_type} is not supported. Supported types: .mlir, .vmfb')
+
+    log.info(f'Successfully loaded model buffer from {model_path}')
+    return vmfb_buffer
+
+
+def create_iree_context_from_buffer(vmfb_buffer):
     try:
         config = ireert.Config('local-task')
-
         vm_module = ireert.VmModule.from_flatbuffer(config.vm_instance, vmfb_buffer)
         context = ireert.SystemContext(config=config)
         context.add_vm_module(vm_module)
 
-        log.info(f"Successfully loaded IREE model")
+        log.info('Successfully created IREE context from buffer')
         return context
 
     except Exception as e:
-        log.error(f"Failed to load IREE model: {e}")
+        log.error(f'Failed to create IREE context: {e}')
         raise
+
+
+def load_model(model_path, target_backend, opt_level, extra_compile_args):
+    vmfb_buffer = load_model_buffer(
+        model_path,
+        target_backend=target_backend,
+        opt_level=opt_level,
+        extra_compile_args=extra_compile_args
+    )
+    return create_iree_context_from_buffer(vmfb_buffer)
 
 
 def get_inference_function(model_context, function_name):
     try:
         main_module = model_context.modules.module
         inference_func = main_module[function_name]
-        log.info(f"Using function '{function_name}' for inference")
+        log.info(f'Using function {function_name} for inference')
         return inference_func
 
     except Exception as e:
-        log.error(f"Failed to get inference function: {e}")
+        log.error(f'Failed to get inference function: {e}')
         raise
 
 
@@ -196,7 +225,7 @@ def inference_iree(inference_func, number_iter, get_slice, test_duration):
         time_infer = loop_inference(number_iter, test_duration)(
             inference_iteration
         )(inference_func, get_slice)['time_infer']
-    
+
     log.info('Inference completed')
     return result, time_infer
 
@@ -215,7 +244,7 @@ def infer_slice(inference_func, slice_input):
     input_buffers = list()
     for input_ in slice_input:
         input_buffers.append(ireert.asdevicearray(device, input_))
-    
+
     result = inference_func(*input_buffers)
 
     if hasattr(result, 'to_host'):
@@ -230,7 +259,7 @@ def prepare_output(result, task):
     elif task == 'classification':
         if hasattr(result, 'to_host'):
             result = result.to_host()
-        
+
         # Extract tensor from dict if needed
         if isinstance(result, dict):
             result_key = next(iter(result))
@@ -239,18 +268,18 @@ def prepare_output(result, task):
         else:
             logits = np.array(result)
             output_key = 'output'
-        
+
         # Ensure correct shape (batch_size, num_classes)
         if logits.ndim == 1:
             logits = logits.reshape(1, -1)
         elif logits.ndim > 2:
             logits = logits.reshape(logits.shape[0], -1)
-        
+
         # Apply softmax
         max_logits = np.max(logits, axis=-1, keepdims=True)
         exp_logits = np.exp(logits - max_logits)
         probabilities = exp_logits / np.sum(exp_logits, axis=-1, keepdims=True)
-        
+
         return {output_key: probabilities}
     else:
         raise ValueError(f'Unsupported task {task}')
@@ -270,7 +299,7 @@ def create_dict_for_transformer(args):
 
 def main():
     args = cli_argument_parser()
-    
+
     try:
         model_wrapper = IREEModelWrapper(args)
         data_transformer = IREETransformer(create_dict_for_transformer(args))
@@ -284,16 +313,13 @@ def main():
             target_device=args.target_backend
         )
 
-        file_type = args.model.split('.')[-1]
-        if file_type == 'mlir':
-            vmfb_buffer = compile_mlir(args.model, args.target_backend, args.opt_level, args.extra_compile_args)
-        elif file_type == 'vmfb':
-            with open(args.model, 'rb') as f:
-                vmfb_buffer = f.read()
-        else:
-            raise ValueError(f'The file type {file_type} is not supported')
-
-        model_context = load_iree_model(vmfb_buffer)
+        log.info('Loading model')
+        model_context = load_model(
+            model_path=args.model,
+            target_backend=args.target_backend,
+            opt_level=args.opt_level,
+            extra_compile_args=args.extra_compile_args
+        )
         inference_func = get_inference_function(model_context, args.function_name)
 
         log.info(f'Preparing input data: {args.input}')
@@ -309,10 +335,10 @@ def main():
 
         log.info('Computing performance metrics')
         inference_result = pp.calculate_performance_metrics_sync_mode(
-            args.batch_size, 
+            args.batch_size,
             inference_time
         )
-    
+
         report_writer.update_execution_results(**inference_result)
         report_writer.write_report(args.report_path)
 

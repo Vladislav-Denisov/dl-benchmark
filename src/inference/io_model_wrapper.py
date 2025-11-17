@@ -415,7 +415,7 @@ class IREEModelWrapper(IOModelWrapper):
     def __init__(self, args):
         self._input_shapes = [args.input_shape]
         self._model_path = args.model
-    
+
     def get_input_layer_names(self, model):
         return ['input']
 

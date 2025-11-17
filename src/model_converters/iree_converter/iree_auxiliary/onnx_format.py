@@ -16,13 +16,13 @@ class IREEConverterONNXFormat(IREEConverter):
 
     def _validate_arguments(self):
         if self.model_path is None or self.model_path == '':
-            raise ValueError("The model_path parameter is required for ONNX conversion.")
+            raise ValueError('The model_path parameter is required for ONNX conversion.')
 
         if not os.path.exists(self.model_path):
-            raise FileNotFoundError(f"Model file not found: {self.model_path}")
+            raise FileNotFoundError(f'Model file not found: {self.model_path}')
 
         if self.onnx_opset_version is None:
-            raise ValueError("The onnx_opset_version parameter is required for ONNX conversion.")
+            raise ValueError('The onnx_opset_version parameter is required for ONNX conversion.')
 
     def _convert_model_from_framework(self):
         if not os.path.exists(self.output_mlir):
@@ -36,5 +36,5 @@ class IREEConverterONNXFormat(IREEConverter):
             self.output_mlir,
         ]
         import_cmd = subprocess.list2cmdline(import_args)
-        ret = subprocess.run(import_cmd, shell=True, capture_output=True)
+        subprocess.run(import_cmd, shell=True, capture_output=True)
         return

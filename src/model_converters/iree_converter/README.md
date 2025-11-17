@@ -27,8 +27,8 @@ This script converts model from `<source_framework>` to the IREE MLIR format.
 - `-w / --weights` is a path to an `.pth` file with trained weights for PyTorch models.
 - `-tm / --torch_module` is a module with the model architecture for PyTorch models. Default: `torchvision.models`.
 - `-is / --input_shape` is an input shape in the format BxWxHxC, where B is a batch size, W is an input tensor width, H is an input tensor height, C is an input tensor number of channels. Required for PyTorch models.
-- `--onnx_opset_version` is the ONNX opset version for ONNX models. Default: `18`.
-- `-o / --output_mlir` is path to save the MLIR file. Required.
+- `--onnx_opset_version` is an ONNX opset version for ONNX models. Default: `18`.
+- `-o / --output_mlir` is a path to save the MLIR file. Required.
 
 ### Parameter combinations
 #### For ONNX models:
@@ -44,21 +44,21 @@ Two loading methods are supported (mutually exclusive):
 - Optional: `--weights <path/to/weights.pth>`
 
 ### Examples of usage
-ONNX model conversion:
+ONNX model conversion ([source of the model efficientnet-b0.onnx](https://github.com/onnx/models/blob/main/Computer_Vision/efficientnet_b0_Opset17_timm/efficientnet_b0_Opset17.onnx)):
 ```sh
 python3 iree_converter.py -f onnx -m efficientnet-b0.onnx \
                          --onnx_opset_version 18 \
                          -o ./output/efficientnet-b0.mlir
 ```
 
-PyTorch model from file:
+PyTorch model from file (`.pt` can be created using [tutorial](https://docs.pytorch.org/docs/main/notes/serialization.html#saving-and-loading-torch-nn-modules)):
 ```sh
 python3 iree_converter.py -f pytorch -m resnet50.pt \
                          -is 1 224 224 3 \
                          -o ./output/resnet50.mlir
 ```
 
-PyTorch model from torchvision with pretrained weights:
+PyTorch model from [torchvision](https://docs.pytorch.org/vision/main/models.html) with pretrained weights:
 ```sh
 python3 iree_converter.py -f pytorch -mn resnet50 \
                          -tm torchvision.models \
@@ -88,19 +88,19 @@ iree_compiler.py --mlir <input.mlir> \
 This script compiles model from `.mlir` format to the deployable binary format for the specified target backend.
 
 ### IREE compiler parameters
-- `-m / --mlir` - Path to an .mlir file with a model. Required.
-- `-tb / --target_backend` - Target backend for compilation. Required. Examples: `llvm-cpu`, `cuda`, `vulkan`, `vmvx`.
-- `--opt_level` - The optimization level of the compilation. Choices: `0`, `1`, `2`, `3`. Default: `2`.
-- `-o / --output_file` - Path to save the compiled model. Required.
-- `--extra_args` - Extra arguments for compilation. Optional.
+- `-m / --mlir` is a path to an .mlir file with a model. Required.
+- `-tb / --target_backend` is a target backend for compilation. Required. Examples: `llvm-cpu`, `cuda`, `vulkan`, `vmvx`.
+- `--opt_level` is an optimization level of the compilation. Choices: `0`, `1`, `2`, `3`. Default: `2`.
+- `-o / --output_file` is a path to save the compiled model. Required.
+- `--extra_args` - is an extra arguments for compilation. Optional.
 
 ### Supported target backends
-- `llvm-cpu` - CPU execution using LLVM
-- `cuda` - NVIDIA GPU execution using CUDA
-- `vulkan` - GPU execution using Vulkan API
-- `vmvx` - Portable VM bytecode execution
-- `metal` - Apple GPU execution using Metal
-- `rocm` - AMD GPU execution using ROCm
+- `llvm-cpu` - CPU execution using LLVM.
+- `cuda` - NVIDIA GPU execution using CUDA.
+- `vulkan` - GPU execution using Vulkan API.
+- `vmvx` - Portable VM bytecode execution.
+- `metal` - Apple GPU execution using Metal.
+- `rocm` - AMD GPU execution using ROCm.
 
 ### Examples of usage
 ```sh
