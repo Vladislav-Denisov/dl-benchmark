@@ -2,6 +2,7 @@ import argparse
 import os
 import sys
 import traceback
+import tempfile
 from pathlib import Path
 
 import postprocessing_data as pp
@@ -17,6 +18,7 @@ sys.path.append(str(Path(__file__).resolve().parents[1].joinpath('model_converte
                                                                  'iree_converter',
                                                                  'iree_auxiliary')))
 from compiler import IREECompiler  # noqa: E402
+from converter import IREEConverter  # noqa: E402
 
 sys.path.append(str(Path(__file__).resolve().parents[1].joinpath('utils')))
 from logger_conf import configure_logger  # noqa: E402
@@ -30,14 +32,45 @@ except ImportError as e:
     sys.exit(1)
 
 
+def validate_cli_args(args):
+    if args.model:
+        pass
+    else:
+        pass
+
+
 def cli_argument_parser():
     parser = argparse.ArgumentParser()
-
+    parser.add_argument('-f', '--source_framework',
+                        help='Source model framework (required for automatic conversion to MLIR)',
+                        type=str,
+                        choices=['onnx', 'pytorch'],
+                        dest='source_framework')    
     parser.add_argument('-m', '--model',
-                        help='Path to .vmfb file with compiled model or .mlir.',
-                        required=True,
+                        help='Path to source framework model (.onnx, .pt),'
+                             'to file with compiled model (.vmfb)'
+                             'or MLIR (.mlir).',
                         type=str,
                         dest='model')
+    parser.add_argument('-w', '--weights',
+                        help='Path to an .pth file with a trained weights.'
+                             'Availiable when source_framework=pytorch ',
+                        type=str,
+                        dest='model_weights')
+    parser.add_argument('-tm', '--torch_module',
+                        help='Torch module with model architecture.'
+                             'Availiable when source_framework=pytorch',
+                        type=str,
+                        dest='torch_module')
+    parser.add_argument('-mn', '--model_name',
+                        help='Model name.',
+                        type=str,
+                        dest='model_name')
+    parser.add_argument('--onnx_opset_version',
+                        help='Path to an .onnx with a trained model.'
+                             'Availiable when source_framework=onnx',
+                        type=int,
+                        dest='onnx_opset_version')
     parser.add_argument('-fn', '--function_name',
                         help='IREE module function name to execute.',
                         required=True,
@@ -143,8 +176,25 @@ def cli_argument_parser():
                         type=str,
                         nargs=argparse.REMAINDER,
                         default=[])
+    args = parser.parse_args()
+    validate_cli_args(args)
+    return args
 
-    return parser.parse_args()
+
+def convert_model_to_mlir(model_path, model_weights, torch_module, model_name, onnx_opset_version, source_framework, input_shape, output_mlir):
+    dictionary = {
+        'source_framework': source_framework,
+        'model_name': model_name,
+        'model_path': model_path,
+        'model_weights': model_weights,
+        'torch_module': torch_module,
+        'onnx_opset_version': onnx_opset_version,
+        'input_shape': input_shape,
+        'output_mlir': output_mlir
+    }
+    converter = IREEConverter.get_converter(dictionary)
+    converter.convert_to_mlir()
+    return
 
 
 def compile_mlir(mlir_path, target_backend, opt_level, extra_compile_args):
@@ -191,13 +241,33 @@ def create_iree_context_from_buffer(vmfb_buffer):
         raise
 
 
-def load_model(model_path, target_backend, opt_level, extra_compile_args):
+def load_model(model_path, model_weights, torch_module, model_name, onnx_opset_version,
+               source_framework, input_shape, target_backend, opt_level, extra_compile_args):
+    is_tmp_mlir = False
+    if model_path is None or model_path.split('.')[-1] not in ['vmfb', 'mlir']:
+        with tempfile.NamedTemporaryFile(mode='w+t', delete=False, suffix='.mlir') as temp:
+            output_mlir = temp.name
+            convert_model_to_mlir(model_path,
+                                  model_weights,
+                                  torch_module,
+                                  model_name,
+                                  onnx_opset_version,
+                                  source_framework,
+                                  input_shape,
+                                  output_mlir)
+            model_path = output_mlir
+            is_tmp_mlir = True
+
     vmfb_buffer = load_model_buffer(
         model_path,
         target_backend=target_backend,
         opt_level=opt_level,
         extra_compile_args=extra_compile_args
     )
+
+    if is_tmp_mlir:
+        os.remove(model_path)
+
     return create_iree_context_from_buffer(vmfb_buffer)
 
 
@@ -316,6 +386,12 @@ def main():
         log.info('Loading model')
         model_context = load_model(
             model_path=args.model,
+            model_weights=args.model_weights,
+            torch_module=args.torch_module,
+            model_name=args.model_name,
+            onnx_opset_version=args.onnx_opset_version,
+            source_framework=args.source_framework,
+            input_shape=args.input_shape,
             target_backend=args.target_backend,
             opt_level=args.opt_level,
             extra_compile_args=args.extra_compile_args
