@@ -433,7 +433,7 @@ class CausalLMIO(TextPromtIO):
         return [self._prompts[0]] * self._batch_size
 
     def process_output(self, result, log):
-        output_text = '\n'.join([f'{i+1}) {text} ... \n' for i, text in enumerate(result)])
+        output_text = '\n'.join([f'{i + 1}) {text} ... \n' for i, text in enumerate(result)])
         log.info(f'Generated results: \n{output_text}')
 
 
@@ -443,7 +443,7 @@ class Speech2SequenceIO(AudioIO):
         return self.audio_data, self.sampling_rate, self.audio_length
 
     def process_output(self, result, log):
-        output_text = '\n'.join([f'{i+1}) {text} ... \n' for i, text in enumerate(result)])
+        output_text = '\n'.join([f'{i + 1}) {text} ... \n' for i, text in enumerate(result)])
         log.info(f'Generated results: \n{output_text}')
 
 
