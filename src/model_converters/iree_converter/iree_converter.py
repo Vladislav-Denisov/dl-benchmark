@@ -68,7 +68,7 @@ def create_dict_for_converter(args):
         'torch_module': args.torch_module,
         'onnx_opset_version': args.onnx_opset_version,
         'input_shape': args.input_shape,
-        'output_mlir': args.output_mlir
+        'output_mlir': args.output_mlir,
     }
     return dictionary
 

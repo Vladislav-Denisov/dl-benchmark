@@ -187,7 +187,7 @@ class IOAdapter(metaclass=abc.ABCMeta):
         return slice_input
 
     def get_slice_input_iree(self, *args, **kwargs):
-        slice_input = list()
+        slice_input = ()
         for key in self._transformed_input:
             data_gen = self._transformed_input[key]
             slice_data = [copy.deepcopy(next(data_gen)) for _ in range(self._batch_size)]

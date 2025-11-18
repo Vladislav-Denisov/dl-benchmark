@@ -42,7 +42,7 @@ def cli_argument_parser():
 def main():
     args = cli_argument_parser()
     try:
-        IREECompiler.compile(args.mlir, args.target_backend, args.opt_level, args.extra_args, args.output_file)
+        IREECompiler.compile_model(args.mlir, args.target_backend, args.opt_level, args.extra_args, args.output_file)
         if os.path.exists(args.output_file):
             print(f'The MLIR has been sucessfully compiled into {args.output_file}')
     except Exception:

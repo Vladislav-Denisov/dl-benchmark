@@ -28,11 +28,11 @@ class IREEConverterONNXFormat(IREEConverter):
         if not os.path.exists(self.output_mlir):
             os.mkdir(self.output_mlir)
         import_args = [
-            "iree-import-onnx",
+            'iree-import-onnx',
             self.model_path,
-            "--opset-version",
+            '--opset-version',
             str(self.onnx_opset_version),
-            "-o",
+            '-o',
             self.output_mlir,
         ]
         import_cmd = subprocess.list2cmdline(import_args)

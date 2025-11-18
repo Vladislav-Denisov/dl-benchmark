@@ -1,8 +1,6 @@
 import argparse
-import os
 import sys
 import traceback
-import tempfile
 from pathlib import Path
 
 import postprocessing_data as pp
@@ -11,14 +9,8 @@ from io_adapter import IOAdapter
 from io_model_wrapper import IREEModelWrapper
 from reporter.report_writer import ReportWriter
 from transformer import IREETransformer
+from iree_auxiliary import (load_model, create_dict_for_transformer, prepare_output, validate_cli_args)
 
-import numpy as np
-
-sys.path.append(str(Path(__file__).resolve().parents[1].joinpath('model_converters',
-                                                                 'iree_converter',
-                                                                 'iree_auxiliary')))
-from compiler import IREECompiler  # noqa: E402
-from converter import IREEConverter  # noqa: E402
 
 sys.path.append(str(Path(__file__).resolve().parents[1].joinpath('utils')))
 from logger_conf import configure_logger  # noqa: E402
@@ -32,20 +24,13 @@ except ImportError as e:
     sys.exit(1)
 
 
-def validate_cli_args(args):
-    if args.model:
-        pass
-    else:
-        pass
-
-
 def cli_argument_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', '--source_framework',
                         help='Source model framework (required for automatic conversion to MLIR)',
                         type=str,
                         choices=['onnx', 'pytorch'],
-                        dest='source_framework')    
+                        dest='source_framework')
     parser.add_argument('-m', '--model',
                         help='Path to source framework model (.onnx, .pt),'
                              'to file with compiled model (.vmfb)'
@@ -181,96 +166,6 @@ def cli_argument_parser():
     return args
 
 
-def convert_model_to_mlir(model_path, model_weights, torch_module, model_name, onnx_opset_version, source_framework, input_shape, output_mlir):
-    dictionary = {
-        'source_framework': source_framework,
-        'model_name': model_name,
-        'model_path': model_path,
-        'model_weights': model_weights,
-        'torch_module': torch_module,
-        'onnx_opset_version': onnx_opset_version,
-        'input_shape': input_shape,
-        'output_mlir': output_mlir
-    }
-    converter = IREEConverter.get_converter(dictionary)
-    converter.convert_to_mlir()
-    return
-
-
-def compile_mlir(mlir_path, target_backend, opt_level, extra_compile_args):
-    try:
-        log.info('Starting model compilation')
-        return IREECompiler.compile(mlir_path, target_backend, opt_level, extra_compile_args)
-    except Exception as e:
-        log.error(f'Failed to compile MLIR: {e}')
-        raise
-
-
-def load_model_buffer(model_path, target_backend, opt_level, extra_compile_args):
-    if not os.path.exists(model_path):
-        raise FileNotFoundError(f'Model file not found: {model_path}')
-
-    file_type = model_path.split('.')[-1]
-
-    if file_type == 'mlir':
-        if target_backend is None:
-            raise ValueError('target_backend is required for MLIR compilation')
-        vmfb_buffer = compile_mlir(model_path, target_backend, opt_level, extra_compile_args)
-    elif file_type == 'vmfb':
-        with open(model_path, 'rb') as f:
-            vmfb_buffer = f.read()
-    else:
-        raise ValueError(f'The file type {file_type} is not supported. Supported types: .mlir, .vmfb')
-
-    log.info(f'Successfully loaded model buffer from {model_path}')
-    return vmfb_buffer
-
-
-def create_iree_context_from_buffer(vmfb_buffer):
-    try:
-        config = ireert.Config('local-task')
-        vm_module = ireert.VmModule.from_flatbuffer(config.vm_instance, vmfb_buffer)
-        context = ireert.SystemContext(config=config)
-        context.add_vm_module(vm_module)
-
-        log.info('Successfully created IREE context from buffer')
-        return context
-
-    except Exception as e:
-        log.error(f'Failed to create IREE context: {e}')
-        raise
-
-
-def load_model(model_path, model_weights, torch_module, model_name, onnx_opset_version,
-               source_framework, input_shape, target_backend, opt_level, extra_compile_args):
-    is_tmp_mlir = False
-    if model_path is None or model_path.split('.')[-1] not in ['vmfb', 'mlir']:
-        with tempfile.NamedTemporaryFile(mode='w+t', delete=False, suffix='.mlir') as temp:
-            output_mlir = temp.name
-            convert_model_to_mlir(model_path,
-                                  model_weights,
-                                  torch_module,
-                                  model_name,
-                                  onnx_opset_version,
-                                  source_framework,
-                                  input_shape,
-                                  output_mlir)
-            model_path = output_mlir
-            is_tmp_mlir = True
-
-    vmfb_buffer = load_model_buffer(
-        model_path,
-        target_backend=target_backend,
-        opt_level=opt_level,
-        extra_compile_args=extra_compile_args
-    )
-
-    if is_tmp_mlir:
-        os.remove(model_path)
-
-    return create_iree_context_from_buffer(vmfb_buffer)
-
-
 def get_inference_function(model_context, function_name):
     try:
         main_module = model_context.modules.module
@@ -293,7 +188,7 @@ def inference_iree(inference_func, number_iter, get_slice, test_duration):
         time_infer.append(exec_time)
     else:
         time_infer = loop_inference(number_iter, test_duration)(
-            inference_iteration
+            inference_iteration,
         )(inference_func, get_slice)['time_infer']
 
     log.info('Inference completed')
@@ -311,7 +206,7 @@ def infer_slice(inference_func, slice_input):
     config = ireert.Config('local-task')
     device = config.device
 
-    input_buffers = list()
+    input_buffers = ()
     for input_ in slice_input:
         input_buffers.append(ireert.asdevicearray(device, input_))
 
@@ -321,50 +216,6 @@ def infer_slice(inference_func, slice_input):
         result = result.to_host()
 
     return result
-
-
-def prepare_output(result, task):
-    if task == 'feedforward':
-        return {}
-    elif task == 'classification':
-        if hasattr(result, 'to_host'):
-            result = result.to_host()
-
-        # Extract tensor from dict if needed
-        if isinstance(result, dict):
-            result_key = next(iter(result))
-            logits = result[result_key]
-            output_key = result_key
-        else:
-            logits = np.array(result)
-            output_key = 'output'
-
-        # Ensure correct shape (batch_size, num_classes)
-        if logits.ndim == 1:
-            logits = logits.reshape(1, -1)
-        elif logits.ndim > 2:
-            logits = logits.reshape(logits.shape[0], -1)
-
-        # Apply softmax
-        max_logits = np.max(logits, axis=-1, keepdims=True)
-        exp_logits = np.exp(logits - max_logits)
-        probabilities = exp_logits / np.sum(exp_logits, axis=-1, keepdims=True)
-
-        return {output_key: probabilities}
-    else:
-        raise ValueError(f'Unsupported task {task}')
-
-
-def create_dict_for_transformer(args):
-    return {
-        'channel_swap': getattr(args, 'channel_swap'),
-        'mean': getattr(args, 'mean'),
-        'std': getattr(args, 'std'),
-        'norm': getattr(args, 'norm'),
-        'layout': getattr(args, 'layout'),
-        'input_shape': getattr(args, 'input_shape'),
-        'batch_size': getattr(args, 'batch_size'),
-    }
 
 
 def main():
@@ -380,7 +231,7 @@ def main():
         report_writer.update_configuration_setup(
             batch_size=args.batch_size,
             iterations_num=args.number_iter,
-            target_device=args.target_backend
+            target_device=args.target_backend,
         )
 
         log.info('Loading model')
@@ -394,7 +245,7 @@ def main():
             input_shape=args.input_shape,
             target_backend=args.target_backend,
             opt_level=args.opt_level,
-            extra_compile_args=args.extra_compile_args
+            extra_compile_args=args.extra_compile_args,
         )
         inference_func = get_inference_function(model_context, args.function_name)
 
@@ -406,13 +257,13 @@ def main():
             inference_func,
             args.number_iter,
             io.get_slice_input_iree,
-            args.time
+            args.time,
         )
 
         log.info('Computing performance metrics')
         inference_result = pp.calculate_performance_metrics_sync_mode(
             args.batch_size,
-            inference_time
+            inference_time,
         )
 
         report_writer.update_execution_results(**inference_result)

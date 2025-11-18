@@ -34,13 +34,13 @@ class IREEConverterPyTorchFormat(IREEConverter):
         if not has_model_path and not has_module_model:
             raise ValueError(
                 'For PyTorch conversion, you must specify either model_path, \
-                or torch_module and model_name'
+                or torch_module and model_name',
             )
 
         if has_model_path and has_module_model:
             raise ValueError(
                 'Provided incompatible parameters for PyTorch conversion (model_path and torch_module+model_name). \
-                Please choose only one method of this.'
+                Please choose only one method of this.',
             )
 
         if has_model_path and not os.path.exists(self.model_path):
