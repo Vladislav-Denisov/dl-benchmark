@@ -14,4 +14,3 @@ class IREEWrapper(FrameworkWrapper):
     @staticmethod
     def create_test(model, dataset, indep_parameters, dep_parameters):
         return Test(model, dataset, indep_parameters, dep_parameters)
-

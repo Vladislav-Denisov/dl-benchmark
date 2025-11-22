@@ -82,4 +82,3 @@ class IREEParameters(FrameworkParameters):
             self.onnx_opset_version = onnx_opset_version
         if self._parameter_is_not_none(extra_compile_args):
             self.extra_compile_args = extra_compile_args
-

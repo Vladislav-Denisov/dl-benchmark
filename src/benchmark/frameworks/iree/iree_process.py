@@ -32,8 +32,8 @@ class IREEProcess(ProcessHandler):
         model_path = self._normalize_optional(model.model)
         weights_path = self._normalize_optional(model.weight)
 
-        command = f'-fn {dep.function_name} -is {dep.input_shape} -ni {indep.iteration} ' \
-                  f'--report_path {self.report_path}'
+        command = (f'-fn {dep.function_name} -is {dep.input_shape} -ni {indep.iteration} '
+                   f'--report_path {self.report_path}')
 
         command = self._add_optional_argument_to_cmd_line(command, '-mn', model.name)
 
@@ -122,4 +122,3 @@ class IREEProcess(ProcessHandler):
         if normalized_candidate in allowed_tasks:
             return normalized_candidate
         return None
-

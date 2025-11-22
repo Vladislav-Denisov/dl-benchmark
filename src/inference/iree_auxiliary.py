@@ -77,7 +77,7 @@ def _validate_pytorch_args(args):
             _validate_iree_model_args(args)
     else:
         if not args.target_backend:
-            raise ValueError(f'target_backend is required when using conversion from torch module')
+            raise ValueError('target_backend is required when using conversion from torch module')
 
     if args.model_weights and args.model_weights != '' and not os.path.exists(args.model_weights):
         raise FileNotFoundError(f'Model weights not found: {args.model_weights}')
