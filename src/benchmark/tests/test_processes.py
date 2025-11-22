@@ -21,6 +21,7 @@ from src.benchmark.frameworks.pytorch_cpp.pytorch_cpp_process import PyTorchCppP
 from src.benchmark.frameworks.tensorflow.tensorflow_process import TensorFlowProcess
 from src.benchmark.frameworks.tensorflow_lite.tensorflow_lite_process import TensorFlowLiteProcess
 from src.benchmark.tests.test_executor import get_host_executor
+from src.benchmark.frameworks.iree.iree_process import IREEProcess
 
 log.basicConfig(
     format='[ %(levelname)s ] %(message)s',
@@ -70,6 +71,7 @@ WRAPPER_REGISTRY = FrameworkWrapperRegistry()
                                                  ['OpenCV DNN Python', OpenCVDNNPythonProcess],
                                                  ['ONNX Runtime Python', ONNXRuntimePythonProcess],
                                                  ['TVM', TVMProcess],
+                                                 ['IREE', IREEProcess],
                                                  ])
 @pytest.mark.parametrize('complex_test', [['sync', 'handwritten', None, SyncOpenVINOProcess],
                                           ['async', 'handwritten', None, AsyncOpenVINOProcess],

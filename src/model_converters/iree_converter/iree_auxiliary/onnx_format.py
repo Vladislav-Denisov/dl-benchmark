@@ -25,8 +25,6 @@ class IREEConverterONNXFormat(IREEConverter):
             raise ValueError('The onnx_opset_version parameter is required for ONNX conversion.')
 
     def _convert_model_from_framework(self):
-        if not os.path.exists(self.output_mlir):
-            os.mkdir(self.output_mlir)
         import_args = [
             'iree-import-onnx',
             self.model_path,

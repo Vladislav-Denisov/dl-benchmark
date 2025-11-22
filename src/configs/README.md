@@ -360,6 +360,21 @@
   - `Framework` - тег, обязательный для заполнения. Определяет фреймворк, модели которого будут
     запущены средствами Apache TVM. По умолчанию задается фреймворк `TVM`.
 
+- Набор тегов для тестирования вывода средствами IREE:
+
+  - `FunctionName` - тег, обязательный для заполнения. Определяет имя функции в IREE-модуле, которое будет вызвано.
+  - `InputShape` - тег, обязательный для заполнения. Определяет размеры входного тензора в формате `B C H W`.
+  - `Layout` - тег, необязательный для заполнения. Определяет расположение каналов входного тензора (`NCHW` по умолчанию).
+  - `Normalize` - тег, необязательный для заполнения. Определяет необходимость нормализации входного изображения с помощью параметров `Mean` и `Std`.
+  - `Mean` - тег, необязательный для заполнения. Определяет средние значения, которые будут вычитаться из каждого канала входного изображения.
+  - `Std` - тег, необязательный для заполнения. Определяет коэффициенты масштабирования для каждого канала входного изображения.
+  - `ChannelSwap` - тег, необязательный для заполнения. Определяет изменение порядка каналов на входном изображении.
+  - `TargetBackend` - тег, необязательный для заполнения. Целевой backend компиляции IREE (`llvm-cpu` по умолчанию).
+  - `OptimizationLevel` - тег, необязательный для заполнения. Определяет уровень оптимизаций при компиляции (`2` по умолчанию).
+  - `OnnxOpsetVersion` - тег, необязательный для заполнения. Указывает версию opset при конвертации ONNX-моделей.
+  - `ExtraCompileArgs` - тег, необязательный для заполнения. Дополнительные аргументы компиляции IREE; перечисляются через пробел и будут добавлены в конец командной строки.
+  - Для PyTorch моделей также возможно использование тега `<Module>` внутри секции `<Model>`, чтобы указать путь к модулю с архитектурой (значение будет проброшено в параметр `--torch_module` скрипта инференса).
+
 ### Примеры заполнения
 
 #### Пример заполнения конфигурации для измерения производительности вывода средствами Intel Distribution of OpenVINO Toolkit
@@ -769,6 +784,47 @@
         <Target>llvm</Target>
         <HighLevelAPI>RelaxVM</HighLevelAPI>
         <OptimizationLevel>3</OptimizationLevel>
+    </FrameworkDependent>
+</Test>
+```
+
+#### Пример заполнения конфигурации для измерения производительности вывода средствами IREE
+
+```xml
+<?xml version="1.0" encoding="utf-8" ?>
+<Test>
+    <Model>
+        <Task>classification</Task>
+        <Name>resnet50</Name>
+        <Precision>FP32</Precision>
+        <SourceFramework>onnx</SourceFramework>
+        <ModelPath>/home/user/models/resnet50/resnet50.onnx</ModelPath>
+        <WeightsPath></WeightsPath>
+        <Module></Module>         <!-- Тег для загрузки PyTorch моделей напрямую из модуля, например torchvision.models -->
+    </Model>
+    <Dataset>
+        <Name>ImageNet</Name>
+        <Path>/mnt/datasets/ILSVRC2012_img_val</Path>
+    </Dataset>
+    <FrameworkIndependent>
+        <InferenceFramework>IREE</InferenceFramework>
+        <BatchSize>1</BatchSize>
+        <Device>CPU</Device>
+        <IterationCount>20</IterationCount>
+        <TestTimeLimit>60</TestTimeLimit>
+    </FrameworkIndependent>
+    <FrameworkDependent>
+        <FunctionName>main</FunctionName>
+        <InputShape>1 3 224 224</InputShape>
+        <Layout>NCHW</Layout>
+        <Normalize>True</Normalize>
+        <Mean>0.485 0.456 0.406</Mean>
+        <Std>0.229 0.224 0.225</Std>
+        <ChannelSwap>2 1 0</ChannelSwap>
+        <TargetBackend>llvm-cpu</TargetBackend>
+        <OptimizationLevel>3</OptimizationLevel>
+        <OnnxOpsetVersion>17</OnnxOpsetVersion>
+        <ExtraCompileArgs>--iree-llvmcpu-target-cpu-features=host</ExtraCompileArgs>
     </FrameworkDependent>
 </Test>
 ```

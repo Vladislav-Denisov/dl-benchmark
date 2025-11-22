@@ -82,7 +82,5 @@ class IREEConverterPyTorchFormat(IREEConverter):
             model = self.__get_model_from_path()
         example_arg = self.torch.randn(*self.input_shape)
         export_output = self.aot.export(model, example_arg)
-        if not os.path.exists(self.output_mlir):
-            os.mkdir(self.output_mlir)
         export_output.save_mlir(self.output_mlir)
         return

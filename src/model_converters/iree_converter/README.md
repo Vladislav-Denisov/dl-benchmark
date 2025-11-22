@@ -26,22 +26,24 @@ This script converts model from `<source_framework>` to the IREE MLIR format.
 - `-m / --model` is a path to an `.onnx` or `.pt` file with a trained model.
 - `-w / --weights` is a path to an `.pth` file with trained weights for PyTorch models.
 - `-tm / --torch_module` is a module with the model architecture for PyTorch models. Default: `torchvision.models`.
-- `-is / --input_shape` is an input shape in the format BxWxHxC, where B is a batch size, W is an input tensor width, H is an input tensor height, C is an input tensor number of channels. Required for PyTorch models.
+- `-is / --input_shape` is an input shape in the format BxHxWxC, where B is a batch size, H is an input tensor height, W is an input tensor width, C is an input tensor number of channels. Required for PyTorch models.
 - `--onnx_opset_version` is an ONNX opset version for ONNX models. Default: `18`.
 - `-o / --output_mlir` is a path to save the MLIR file. Required.
 
 ### Parameter combinations
 #### For ONNX models:
 - Required: `--source_framework onnx`, `--model <path/to/model.onnx>`, `--output_mlir <output_path>`
-- Optional: `--onnx_opset_version` (default: 18)
+- Optional: `--onnx_opset_version` (default: 18; the converter validates that the value is set, so keep the default or override it explicitly)
 #### For PyTorch models:
 Two loading methods are supported (mutually exclusive):
 1. From file:
-- Required: `--source_framework pytorch`, `--model <path/to/model.pt>`, `--input_shape B W H C`, `--output_mlir <output_path>`
-- Optional: `--weights <path/to/weights.pth>`
+- Required: `--source_framework pytorch`, `--model <path/to/model.pt>`, `--input_shape B H W C`, `--output_mlir <output_path>`
+- Optional: `--model_name <name>` (used only for logging), `--weights <path/to/weights.pth>`
 1. From module:
-- Required: `--source_framework pytorch`, `--model_name <model_name>`, `--torch_module <module>`, `--input_shape B W H C`, `--output_mlir <output_path>`
+- Required: `--source_framework pytorch`, `--model_name <model_name>`, `--torch_module <module>`, `--input_shape B H W C`, `--output_mlir <output_path>`
 - Optional: `--weights <path/to/weights.pth>`
+
+> **Note:** `--model` and the pair `(--torch_module`, `--model_name)` are mutually exclusive. Passing both at the same time will raise a validation error (`converter.py` enforces the rule). Likewise, `--input_shape` is only validated for PyTorch conversions, so you can omit it for ONNX.
 
 ### Examples of usage
 ONNX model conversion ([source of the model efficientnet-b0.onnx](https://github.com/onnx/models/blob/main/Computer_Vision/efficientnet_b0_Opset17_timm/efficientnet_b0_Opset17.onnx)):

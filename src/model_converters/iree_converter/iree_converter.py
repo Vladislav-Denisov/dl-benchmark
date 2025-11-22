@@ -43,10 +43,10 @@ def cli_argument_parser():
                         default=18,
                         dest='onnx_opset_version')
     parser.add_argument('-is', '--input_shape',
-                        help='Input shape BxWxHxC, B is a batch size,'
-                             'W is an input tensor width,'
+                        help='Input shape BxCxHxW, B is a batch size,'
+                             'C is an input tensor number of channels,'
                              'H is an input tensor height,'
-                             'C is an input tensor number of channels.',
+                             'W is an input tensor width.',
                         type=int,
                         nargs=4,
                         dest='input_shape')

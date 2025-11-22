@@ -402,10 +402,10 @@ class IREETransformer(Transformer):
         return image
 
     def __set_layout(self, image):
-        layout = self._converting.get('layout', 'NHWC')
-        if layout == 'NCHW':
-            # HWC to CHW
-            image = image.transpose(2, 0, 1)
+        layout = self._converting['layout']
+        if layout is not None:
+            layout = LAYER_LAYOUT_TO_IMAGE[layout]
+            image = np.expand_dims(image, 0).transpose(layout)
         return image
 
     def __bgr_to_rgb(self, image):

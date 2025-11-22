@@ -23,3 +23,7 @@ paddlepaddle==2.6.0
 
 ncnn
 spektral==1.3.0
+
+iree-base-compiler
+iree-base-runtime
+iree-turbine

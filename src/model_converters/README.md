@@ -16,6 +16,7 @@
   format from TensorFlow and ONNX formats.
 - `tvm_converter` contains converter and compiler
   to the TVM format.
+- `iree_converter` contains tools to convert ONNX or PyTorch models to IREE MLIR and compile them to VMFB binaries.
 
 ## An overview of existing model converters
 

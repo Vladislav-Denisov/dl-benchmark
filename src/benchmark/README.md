@@ -22,6 +22,7 @@ the following frameworks:
 - [RKNN][rknn].
 - [Spektral][spektral] (Python API).
 - [PaddlePaddle][paddlepaddle] (Python API).
+- [IREE][iree] (Python API).
 
 ### Implemented algorithm
 
@@ -274,3 +275,4 @@ pip install openvino_dev[mxnet,caffe,caffe2,onnx,pytorch,tensorflow2]==<your ver
 [rknn]: https://github.com/rockchip-linux/rknpu2
 [spektral]: https://graphneural.network
 [paddlepaddle]: https://www.paddlepaddle.org.cn/en
+[iree]: https://iree.dev

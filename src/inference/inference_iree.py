@@ -68,10 +68,10 @@ def cli_argument_parser():
                         nargs='+',
                         dest='input')
     parser.add_argument('-is', '--input_shape',
-                        help='Input shape BxHxWxC, B is a batch size,'
+                        help='Input shape BxCxHxW, B is a batch size,'
+                             'C is an input tensor number of channels,'
                              'H is an input tensor height,'
-                             'W is an input tensor width,'
-                             'C is an input tensor number of channels.',
+                             'W is an input tensor width.',
                         required=True,
                         type=int,
                         nargs=4,
@@ -120,7 +120,7 @@ def cli_argument_parser():
                         dest='report_path')
     parser.add_argument('--layout',
                         help='Input layout.',
-                        default='NHWC',
+                        default='NCHW',
                         choices=['NHWC', 'NCHW'],
                         type=str,
                         dest='layout')
@@ -206,7 +206,7 @@ def infer_slice(inference_func, slice_input):
     config = ireert.Config('local-task')
     device = config.device
 
-    input_buffers = ()
+    input_buffers = []
     for input_ in slice_input:
         input_buffers.append(ireert.asdevicearray(device, input_))
 

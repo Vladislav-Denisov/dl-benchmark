@@ -23,18 +23,32 @@ except ImportError as e:
     sys.exit(1)
 
 
+def _validate_iree_model_args(args):
+    if not args.model:
+        raise ValueError('Model path (-m/--model) is required')
+    if not os.path.exists(args.model):
+        raise FileNotFoundError(f'The file not found: {args.model}')
+
+    file_type = args.model.split('.')[-1].lower()
+    supported_extensions = ['mlir', 'vmfb']
+    if file_type not in supported_extensions:
+        raise ValueError(f'Model must be an {supported_extensions} file')
+    if file_type == 'mlir' and not args.target_backend:
+        raise ValueError('target_backend is required when using .mlir model')
+
+
 def _validate_onnx_args(args):
     if not args.model:
         raise ValueError('Model path (-m/--model) is required for ONNX framework')
-
-    if not args.model.endswith('.onnx'):
-        raise ValueError('For ONNX framework, model must be an .onnx file')
-
     if not os.path.exists(args.model):
         raise FileNotFoundError(f'Model file not found: {args.model}')
 
-    if not args.onnx_opset_version:
-        raise ValueError('onnx_opset_version is required for ONNX framework')
+    file_type = args.model.split('.')[-1]
+    if file_type == 'onnx':
+        if not args.onnx_opset_version:
+            raise ValueError('onnx_opset_version is required for ONNX framework')
+    else:
+        _validate_iree_model_args(args)
 
 
 def _validate_pytorch_args(args):
@@ -44,7 +58,7 @@ def _validate_pytorch_args(args):
 
     if not has_model_path and not has_module_model:
         raise ValueError(
-            'For PyTorch conversion, you must specify either model_path (.pt file), '
+            'For PyTorch conversion, you must specify either model_path, '
             'or torch_module and model_name',
         )
 
@@ -59,55 +73,21 @@ def _validate_pytorch_args(args):
             raise FileNotFoundError(f'Model file not found: {args.model}')
 
         file_type = args.model.split('.')[-1]
-        supported_extensions = ['pt']
-        if file_type not in supported_extensions:
-            raise ValueError(f'The file type {file_type} is not supported.'
-                             f'Supported: {", ".join(supported_extensions)}')
+        if file_type != 'pt':
+            _validate_iree_model_args(args)
+    else:
+        if not args.target_backend:
+            raise ValueError(f'target_backend is required when using conversion from torch module')
 
     if args.model_weights and args.model_weights != '' and not os.path.exists(args.model_weights):
         raise FileNotFoundError(f'Model weights not found: {args.model_weights}')
 
 
-def _validate_conversion_model_args(args):
-    if not args.target_backend:
-        raise ValueError(f'target_backend is required when using conversion from {args.source_framework} model')
+def validate_cli_args(args):
     if args.source_framework == 'onnx':
         _validate_onnx_args(args)
     elif args.source_framework == 'pytorch':
         _validate_pytorch_args(args)
-
-
-def _validate_mlir_args(args):
-    if not args.target_backend:
-        raise ValueError('target_backend is required when using .mlir model')
-
-    if not os.path.exists(args.model):
-        raise FileNotFoundError(f'MLIR file not found: {args.model}')
-
-
-def _validate_vmfb_args(args):
-    if not os.path.exists(args.model):
-        raise FileNotFoundError(f'VMFB file not found: {args.model}')
-
-
-def _validate_iree_model_args(args):
-    if not args.model:
-        raise ValueError('Model path (-m/--model) is required when source_framework is not specified')
-
-    file_ext = args.model.split('.')[-1].lower()
-
-    if file_ext == 'mlir':
-        _validate_mlir_args(args)
-    elif file_ext == 'vmfb':
-        _validate_vmfb_args(args)
-    else:
-        supported_formats = ['.onnx', '.pt', '.mlir', '.vmfb']
-        raise ValueError(f'Unsupported model format: {args.model}. Supported formats: {", ".join(supported_formats)}')
-
-
-def validate_cli_args(args):
-    if args.source_framework:
-        _validate_conversion_model_args(args)
     else:
         _validate_iree_model_args(args)
 
