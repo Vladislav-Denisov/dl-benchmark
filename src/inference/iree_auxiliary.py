@@ -190,27 +190,14 @@ def prepare_output(result, task):
         if hasattr(result, 'to_host'):
             result = result.to_host()
 
-        # Extract tensor from dict if needed
-        if isinstance(result, dict):
-            result_key = next(iter(result))
-            logits = result[result_key]
-            output_key = result_key
-        else:
-            logits = np.array(result)
-            output_key = 'output'
-
-        # Ensure correct shape (batch_size, num_classes)
-        if logits.ndim == 1:
-            logits = logits.reshape(1, -1)
-        elif logits.ndim > 2:
-            logits = logits.reshape(logits.shape[0], -1)
+        logits = np.array(result)
 
         # Apply softmax
         max_logits = np.max(logits, axis=-1, keepdims=True)
         exp_logits = np.exp(logits - max_logits)
         probabilities = exp_logits / np.sum(exp_logits, axis=-1, keepdims=True)
 
-        return {output_key: probabilities}
+        return {'output': probabilities}
     else:
         raise ValueError(f'Unsupported task {task}')
 
