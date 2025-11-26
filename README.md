@@ -33,6 +33,7 @@ DLI supports inference using the following frameworks:
 - [ncnn][ncnn] (Python API).
 - [PaddlePaddle][PaddlePaddle] (Python API).
 - [ExecuTorch][executorch] (C++ and Python APIs)
+- [IREE][iree] (Python API)
 
 More information about DLI is available on the web-site
 ([here][dli-ru-web-page] (in Russian)
@@ -105,6 +106,7 @@ Please consider citing the following papers.
     for TensorFlow.
   - `TensorFlowLite` is a directory of Dockerfiles for TensorFlow Lite.
   - `TVM` is a directory of Dockerfiles for Apache TVM.
+  - `IREE` is a directory of Dockerfiles for IREE. 
 
 - `docs` directory contains auxiliary documentation. Please, find
   complete documentation at the [Wiki page][dli-wiki].
@@ -282,6 +284,7 @@ Report questions, issues and suggestions, using:
 [ncnn]: https://github.com/Tencent/ncnn
 [PaddlePaddle]: https://www.paddlepaddle.org.cn/en
 [executorch]: https://pytorch.org/executorch-overview
+[iree]: https://iree.dev
 [benchmark-app]: https://github.com/openvinotoolkit/openvino/tree/master/samples/cpp/benchmark_app
 [dli-ru-web-page]: http://hpc-education.unn.ru/dli-ru
 [dli-web-page]: http://hpc-education.unn.ru/dli
