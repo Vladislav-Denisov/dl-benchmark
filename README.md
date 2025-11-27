@@ -160,6 +160,9 @@ Please consider citing the following papers.
     - [`validation_results_tvm.md`](results/validation/validation_results_tvm.md)
       is a table that confirms correctness of inference implementation
       based on Apache TVM for several public models.
+    - [`validation_results_iree.md`](results/validation/validation_results_iree.md)
+      is a table that confirms correctness of inference implementation
+      based on IREE for several public models.
 
   - [`mxnet_models_checklist.md`](results/mxnet_models_checklist.md) contains a list
     of deep models inferred by MXNet checked in the DLI benchmark.
