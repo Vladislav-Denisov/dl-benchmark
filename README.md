@@ -32,8 +32,8 @@ DLI supports inference using the following frameworks:
 - [RKNN][rknn] (C++ API).
 - [ncnn][ncnn] (Python API).
 - [PaddlePaddle][PaddlePaddle] (Python API).
-- [ExecuTorch][executorch] (C++ and Python APIs)
-- [IREE][iree] (Python API)
+- [ExecuTorch][executorch] (C++ and Python APIs).
+- [IREE][iree] (Python API).
 
 More information about DLI is available on the web-site
 ([here][dli-ru-web-page] (in Russian)
@@ -184,6 +184,8 @@ Please consider citing the following papers.
     of deep models inferred by TensorFlow Lite checked in the DLI benchmark.
   - [`tvm_models_checklist.md`](results/tvm_models_checklist.md) contains a list
     of deep models inferred by Apache TVM checked in the DLI benchmark.
+  - [`iree_models_checklist.md`](results/iree_models_checklist.md) contains a list
+    of deep models inferred by IREE checked in the DLI benchmark.
 
 - `src` directory contains benchmark sources.
 
