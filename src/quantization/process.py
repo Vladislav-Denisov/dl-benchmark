@@ -74,7 +74,7 @@ class ProcessHandler(metaclass=abc.ABCMeta):
         command_line = self.__fill_command_line()
         if command_line == '':
             self.__log.error('Command line is empty')
-        self.__log.info(f'Start quantization model #{idx+1}!')
+        self.__log.info(f'Start quantization model #{idx + 1}!')
         self.__log.info(f'Command line is : {command_line}')
         self._status, self._output = self._executor.execute_process(command_line)
         if type(self._output) is not list:

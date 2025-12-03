@@ -25,7 +25,7 @@ class ProcessHandler(metaclass=abc.ABCMeta):
         command_line = self.__fill_command_line()
         if command_line == '':
             self.__log.error('Command line is empty')
-        self.__log.info(f'Start accuracy check for {idx+1} test: {self._test.model.name}')
+        self.__log.info(f'Start accuracy check for {idx + 1} test: {self._test.model.name}')
         self.__log.info(f'Command line is : {command_line}')
         self._executor.set_target_framework(self._test.framework)
         command_line = self._executor.prepare_command_line(self._test, command_line)

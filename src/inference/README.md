@@ -17,6 +17,7 @@
 1. ncnn.
 1. PaddlePaddle.
 1. Spektral.
+1. IREE.
 
 ## Вывод глубоких моделей с использованием Inference Engine
 
@@ -1482,6 +1483,124 @@ python inference_ncnn.py --model <model_name> \
                          --batch_size <batch_size>
 ```
 
+## Вывод глубоких моделей с использованием IREE
+
+#### Скрипт
+
+```bash
+inference_iree.py
+```
+
+#### Общие обязательные аргументы
+
+- `-fn / --function_name` - имя функции внутри IREE-модуля, которое будет вызвано при инференсе.
+- `-i / --input` - путь до изображения или директории с изображениями
+  (расширения файлов `.jpg`, `.png`, `.bmp` и т.д.).
+- `-is / --input_shape` - размеры входного тензора сети в формате
+  BxCxHxW, B - размер пачки, C - количество каналов изображений,
+  H - высота изображений, W - ширина изображений.
+
+#### Остальные параметры зависят от того, в каком формате модель подается на вход.
+
+- **Готовый IREE-модуль (`.vmfb` или `.mlir`)**
+  - `-m / --model` - путь до модели в формате `.vmfb` (готовый бинарник) или `.mlir` (будет скомпилирован перед запуском). Обязательный параметр.
+  - `-tb / --target_backend` - целевой backend для компиляции и исполнения (`llvm-cpu`, `cuda`, `vulkan`, `metal`, `rocm`, `vmvx` и т.д.). По умолчанию `llvm-cpu`. Обязательный параметр, если модель в формате `.mlir`.
+
+- **ONNX-модель**
+  - `--source_framework onnx` - фреймворк, из которого будет загружена модель. Обязательный параметр.
+  - `-m / --model` - путь до модели в формате `.onnx`. Обязательный параметр.
+  - `--onnx_opset_version` - версия ONNX-opset (по умолчанию `18`).
+  - `-tb / --target_backend` - целевой backend для компиляции и исполнения (`llvm-cpu`, `cuda`, `vulkan`, `metal`, `rocm`, `vmvx` и т.д.). По умолчанию `llvm-cpu`. Обязательный параметр.
+
+- **PyTorch-модель из файла**
+  - `--source_framework pytorch` - фреймворк, из которого будет загружена модель. Обязательный параметр.
+  - `-m / --model` - путь до модели в формате `.pt`. Обязательный параметр.
+  - `-w / --weights` - путь до файла с весами модели в формате `.pth`. Опциональный параметр.
+  - `-tb / --target_backend` - целевой backend для компиляции и исполнения (`llvm-cpu`, `cuda`, `vulkan`, `metal`, `rocm`, `vmvx` и т.д.). По умолчанию `llvm-cpu`. Обязательный параметр.
+
+- **PyTorch-модель из модуля**
+  - `--source_framework pytorch` - фреймворк, из которого будет загружена модель. Обязательный параметр.
+  - `-tm / --torch_module` - путь до Python модуля или относительный путь
+  до Python файла с архитектурой модели (например `torchvision.models` для модуля с [моделями][torchvision_models]). Обязательный параметр.
+  - `-mn / --model_name` - название модели. Обязательный параметр.
+  - `-w / --weights` - путь до файла с весами модели в формате `.pth`. Опциональный параметр.
+  - `-tb / --target_backend` - целевой backend для компиляции и исполнения (`llvm-cpu`, `cuda`, `vulkan`, `metal`, `rocm`, `vmvx` и т.д.). По умолчанию `llvm-cpu`. Обязательный параметр.
+
+#### Опциональные аргументы
+
+- `-b / --batch_size` - количество изображений, которые будут обработаны
+  за один проход сети. По умолчанию равно `1`. Значение данного параметра
+  должно быть равно значению B из параметра `input_shape`.
+- `-t / --task` - название задачи. Текущая реализация поддерживает
+  решение задачи классификации (`classification`). По умолчанию принимает значение `feedforward`.
+- `-l / --labels`- путь до файла в формате JSON с перечнем меток
+  при решении задачи классификации. По умолчанию принимает значение
+  `image_net_labels.json`, что соответствует меткам набора данных
+  ImageNet.
+- `-nt / --number_top` - количество лучших результатов, выводимых при решении задачи классификации. По умолчанию выводится `5` наилучших
+  результатов.
+- `-ni / --number_iter` - количество прямых проходов по сети.
+  По умолчанию выполняется `1` проход по сети.
+- `--raw_output` - работа скрипта без логов. По умолчанию не установлен.
+- `--time` – ограничение по времени в секундах. Если заданы одновременно `--time` и `-ni`, выполняется тот сценарий, который дольше.
+- `--report_path` – путь к `.json`-отчёту (по умолчанию `src/inference/iree_inference_report.json`).
+- `--layout` – формат входного тензора (`NHWC` или `NCHW`, по умолчанию `NCHW`).
+- `--norm` – флаг нормализации изображения (делит значения на `255` перед дальнейшей обработкой).
+- `--mean`, `--std`, `--channel_swap` – параметры препроцессинга. Значения по умолчанию: `mean=[0, 0, 0]`, `std=[1, 1, 1]`, `channel_swap=[2, 1, 0]`.
+- `--opt_level` – уровень оптимизаций, если перед началом вывода потребуется компиляция модели (`0–3`, по умолчанию `2`).
+- `--extra_compile_args` – дополнительные флаги компиляции (должны указываться строго в конце командной строки).
+  ```
+  --extra_compile_args --iree-llvmcpu-target-cpu=cascadelake --iree-llvmcpu-target-triple=x86_64-linux-gnu
+  ```
+
+#### Примеры запуска
+
+**Готовый `.vmfb`**
+
+```bash
+python3 inference_iree.py \
+    -m compiled/resnet50.vmfb \
+    -fn main \
+    -i ./data/images \
+    -is 1 3 224 224 \
+    -b 1 -ni 100 \
+    -t classification \
+    -l ./labels/imagenet_synset.txt
+```
+
+**Автоконвертация ONNX -> MLIR -> VMFB**
+
+```bash
+python3 inference_iree.py \
+    --source_framework onnx \
+    -m ./models/efficientnet-b0.onnx \
+    --onnx_opset_version 18 \
+    -fn main \
+    -i ./data/test.jpg \
+    -is 1 3 224 224 \
+    -tb llvm-cpu \
+    --opt_level 3 \
+    --extra_compile_args --iree-vulkan-target-triple=rdna2-pc-linux-gnu
+```
+
+** Автоконвертация Pytorch модели из `torchvision`**
+
+```bash
+python3 inference_iree.py \
+    --source_framework pytorch \
+    -mn resnet50 \
+    -tm torchvision.models \
+    -fn classification \
+    -i ./data/images \
+    -is 1 3 224 224 \
+    -tb llvm-cpu \
+    --mean 123.68 116.78 103.94 \
+    --std 58.40 57.12 57.38
+```
+
+Результат выполнения: набор наиболее вероятных классов, которым принадлежит
+изображение.
+
 <!-- LINKS -->
 [execution_providers]: https://onnxruntime.ai/docs/execution-providers
 [gluon_modelzoo]: https://cv.gluon.ai/model_zoo/index.html
@@ -1492,3 +1611,4 @@ python inference_ncnn.py --model <model_name> \
 [dgl]: https://www.dgl.ai/pages/start.html
 [ogb]: https://ogb.stanford.edu/
 [tensorflow-gpu]: https://www.tensorflow.org/install/pip
+[iree]: https://iree.dev

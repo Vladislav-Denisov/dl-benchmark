@@ -368,3 +368,71 @@ class NcnnTransformer(Transformer):
 
 class ExecuTorchTransformer(TVMTransformer):
     pass
+
+
+class IREETransformer(Transformer):
+    def __init__(self, converting):
+        self._converting = converting
+
+    def __set_norm(self, image):
+        if self._converting.get('norm', False):
+            image = image.astype(np.float32) / 255.0
+        return image
+
+    def __set_channel_swap(self, image):
+        channel_swap = self._converting.get('channel_swap')
+        if channel_swap is not None:
+            image = image[:, :, channel_swap]
+        return image
+
+    def __set_mean(self, image):
+        mean = self._converting.get('mean')
+        if mean is not None and len(mean) == 3:
+            image[:, :, 0] -= mean[0]
+            image[:, :, 1] -= mean[1]
+            image[:, :, 2] -= mean[2]
+        return image
+
+    def __set_std(self, image):
+        std = self._converting.get('std')
+        if std is not None and len(std) == 3:
+            image[:, :, 0] /= std[0]
+            image[:, :, 1] /= std[1]
+            image[:, :, 2] /= std[2]
+        return image
+
+    def __set_layout(self, image):
+        layout = self._converting['layout']
+        if layout is not None:
+            layout = LAYER_LAYOUT_TO_IMAGE[layout]
+            image = np.expand_dims(image, 0).transpose(layout)
+        return image
+
+    def __bgr_to_rgb(self, image):
+        return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+    def _transform(self, image):
+        transformed_image = self.__bgr_to_rgb(image)
+        transformed_image = self.__set_norm(transformed_image)
+        transformed_image = self.__set_channel_swap(transformed_image)
+        transformed_image = self.__set_mean(transformed_image)
+        transformed_image = self.__set_std(transformed_image)
+        transformed_image = self.__set_layout(transformed_image)
+        return transformed_image
+
+    def transform_images(self, images, shape, element_type, *args):
+        dataset_size = images.shape[0]
+        new_shape = [dataset_size] + shape[1:]
+        transformed_images = np.zeros(shape=new_shape, dtype=element_type)
+        for i in range(dataset_size):
+            transformed_images[i] = self._transform(images[i])
+        return transformed_images
+
+    def get_shape_in_chw_order(self, shape, *args):
+        layout = self._converting.get('layout', 'NHWC')
+        if layout == 'NHWC':
+            return shape[3], shape[1], shape[2]
+        elif layout == 'NCHW':
+            return shape[1], shape[2], shape[3]
+        else:
+            return shape[1:]

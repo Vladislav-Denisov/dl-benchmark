@@ -19,3 +19,4 @@ class KnownFrameworks:
     ncnn = 'ncnn'
     executorch_cpp = 'ExecuTorch Cpp'
     executorch = 'ExecuTorch'
+    iree = 'IREE'

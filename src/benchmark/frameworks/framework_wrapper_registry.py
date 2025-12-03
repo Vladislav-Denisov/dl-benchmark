@@ -21,6 +21,7 @@ from .spektral.spektral_wrapper import SpektralWrapper
 from .rknn.rknn_wrapper import RknnWrapper
 from .executorch_cpp.executorch_cpp_wrapper import ExecuTorchCppWrapper
 from .executorch.executorch_wrapper import ExecuTorchWrapper
+from .iree.iree_wrapper import IREEWrapper
 
 
 class FrameworkWrapperRegistry(metaclass=Singleton):
@@ -62,3 +63,4 @@ class FrameworkWrapperRegistry(metaclass=Singleton):
         self._framework_wrappers[RknnWrapper.framework_name] = RknnWrapper()
         self._framework_wrappers[ExecuTorchCppWrapper.framework_name] = ExecuTorchCppWrapper()
         self._framework_wrappers[ExecuTorchWrapper.framework_name] = ExecuTorchWrapper()
+        self._framework_wrappers[IREEWrapper.framework_name] = IREEWrapper()

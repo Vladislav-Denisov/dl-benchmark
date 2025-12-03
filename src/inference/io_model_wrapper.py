@@ -409,3 +409,19 @@ class RknnIOModelWrapperCpp(IOModelWrapper):
 
 class ExecuTorchIOModelWrapper(TVMIOModelWrapper):
     pass
+
+
+class IREEModelWrapper(IOModelWrapper):
+    def __init__(self, args):
+        self._input_shapes = [args.input_shape]
+        self._model_path = args.model
+
+    def get_input_layer_names(self, model):
+        return ['input']
+
+    def get_input_layer_shape(self, model, layer_name):
+        return self._input_shapes[0]
+
+    def get_input_layer_dtype(self, model, layer_name):
+        import numpy as np
+        return np.float32

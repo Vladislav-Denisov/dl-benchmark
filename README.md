@@ -32,7 +32,8 @@ DLI supports inference using the following frameworks:
 - [RKNN][rknn] (C++ API).
 - [ncnn][ncnn] (Python API).
 - [PaddlePaddle][PaddlePaddle] (Python API).
-- [ExecuTorch][executorch] (C++ and Python APIs)
+- [ExecuTorch][executorch] (C++ and Python APIs).
+- [IREE][iree] (Python API).
 
 More information about DLI is available on the web-site
 ([here][dli-ru-web-page] (in Russian)
@@ -105,6 +106,7 @@ Please consider citing the following papers.
     for TensorFlow.
   - `TensorFlowLite` is a directory of Dockerfiles for TensorFlow Lite.
   - `TVM` is a directory of Dockerfiles for Apache TVM.
+  - `IREE` is a directory of Dockerfiles for IREE. 
 
 - `docs` directory contains auxiliary documentation. Please, find
   complete documentation at the [Wiki page][dli-wiki].
@@ -158,6 +160,9 @@ Please consider citing the following papers.
     - [`validation_results_tvm.md`](results/validation/validation_results_tvm.md)
       is a table that confirms correctness of inference implementation
       based on Apache TVM for several public models.
+    - [`validation_results_iree.md`](results/validation/validation_results_iree.md)
+      is a table that confirms correctness of inference implementation
+      based on IREE for several public models.
 
   - [`mxnet_models_checklist.md`](results/mxnet_models_checklist.md) contains a list
     of deep models inferred by MXNet checked in the DLI benchmark.
@@ -179,6 +184,8 @@ Please consider citing the following papers.
     of deep models inferred by TensorFlow Lite checked in the DLI benchmark.
   - [`tvm_models_checklist.md`](results/tvm_models_checklist.md) contains a list
     of deep models inferred by Apache TVM checked in the DLI benchmark.
+  - [`iree_models_checklist.md`](results/iree_models_checklist.md) contains a list
+    of deep models inferred by IREE checked in the DLI benchmark.
 
 - `src` directory contains benchmark sources.
 
@@ -282,6 +289,7 @@ Report questions, issues and suggestions, using:
 [ncnn]: https://github.com/Tencent/ncnn
 [PaddlePaddle]: https://www.paddlepaddle.org.cn/en
 [executorch]: https://pytorch.org/executorch-overview
+[iree]: https://iree.dev
 [benchmark-app]: https://github.com/openvinotoolkit/openvino/tree/master/samples/cpp/benchmark_app
 [dli-ru-web-page]: http://hpc-education.unn.ru/dli-ru
 [dli-web-page]: http://hpc-education.unn.ru/dli

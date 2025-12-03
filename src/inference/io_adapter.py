@@ -186,6 +186,14 @@ class IOAdapter(metaclass=abc.ABCMeta):
 
         return slice_input
 
+    def get_slice_input_iree(self, *args, **kwargs):
+        slice_input = []
+        for key in self._transformed_input:
+            data_gen = self._transformed_input[key]
+            slice_data = [copy.deepcopy(next(data_gen)) for _ in range(self._batch_size)]
+            slice_input.append(np.stack(slice_data))
+        return slice_input
+
     def get_slice_input_mxnet(self, *args, **kwargs):
         import mxnet
         slice_input = dict.fromkeys(self._transformed_input.keys(), None)
@@ -425,7 +433,7 @@ class CausalLMIO(TextPromtIO):
         return [self._prompts[0]] * self._batch_size
 
     def process_output(self, result, log):
-        output_text = '\n'.join([f'{i+1}) {text} ... \n' for i, text in enumerate(result)])
+        output_text = '\n'.join([f'{i + 1}) {text} ... \n' for i, text in enumerate(result)])
         log.info(f'Generated results: \n{output_text}')
 
 
@@ -435,7 +443,7 @@ class Speech2SequenceIO(AudioIO):
         return self.audio_data, self.sampling_rate, self.audio_length
 
     def process_output(self, result, log):
-        output_text = '\n'.join([f'{i+1}) {text} ... \n' for i, text in enumerate(result)])
+        output_text = '\n'.join([f'{i + 1}) {text} ... \n' for i, text in enumerate(result)])
         log.info(f'Generated results: \n{output_text}')
 
 

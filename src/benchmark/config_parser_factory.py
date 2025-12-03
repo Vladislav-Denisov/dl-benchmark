@@ -14,6 +14,7 @@ from frameworks.tvm.tvm_parameters_parser import TVMParametersParser
 from frameworks.ncnn.ncnn_parameters_parser import NcnnParametersParser
 from frameworks.spektral.spektral_parameters_parser import SpektralParametersParser
 from frameworks.executorch.executorch_parameters_parser import ExecuTorchParametersParser
+from frameworks.iree.iree_parameters_parser import IREEParametersParser
 
 
 def get_parameters_parser(framework):
@@ -57,4 +58,6 @@ def get_parameters_parser(framework):
         return CppParametersParser()
     if framework == KnownFrameworks.executorch:
         return ExecuTorchParametersParser()
+    if framework == KnownFrameworks.iree:
+        return IREEParametersParser()
     raise NotImplementedError(f'Unknown framework {framework}')

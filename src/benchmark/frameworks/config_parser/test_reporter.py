@@ -77,7 +77,9 @@ class Test(metaclass=abc.ABCMeta):
         match_parameter_description['compile_with_backend'] = 'Pytorch compile backend'
 
         match_parameter_description['high_level_api'] = 'TVM HighLevelAPI'
-        match_parameter_description['opt_level'] = 'TVM OptimizationLevel'
+        match_parameter_description['opt_level'] = 'Optimization level'
+
+        match_parameter_description['extra_compile_args'] = 'Extra compile args'
 
         for parameter, description in match_parameter_description.items():
             if hasattr(self.dep_parameters, parameter) and getattr(self.dep_parameters, parameter) is not None:
