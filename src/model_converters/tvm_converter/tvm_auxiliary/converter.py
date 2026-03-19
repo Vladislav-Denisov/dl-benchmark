@@ -113,8 +113,10 @@ class TVMConverter(metaclass=abc.ABCMeta):
             fo.write(self.tvm.ir.save_json(self.mod))
 
     def get_graph_module_from_lib(self, lib):
-        if self.high_level_api in ['Relay', 'RelayVM']:
+        if self.high_level_api == 'Relay':
             return self.__get_graph_module_from_relay_lib(lib)
+        elif self.high_level_api == 'RelayVM':
+            return self.__get_graph_module_from_relay_vm_lib(lib)
         elif self.high_level_api == 'RelaxVM':
             return self.__get_graph_module_from_relax_vm_lib(lib)
         else:
@@ -124,6 +126,11 @@ class TVMConverter(metaclass=abc.ABCMeta):
         _, dev = self._get_target_device()
         self.graph = self.graph_executor.GraphModule(lib['default'](dev))
         return self.graph
+
+    def __get_graph_module_from_relay_vm_lib(self, lib):
+        _, dev = self._get_target_device()
+        des_vm = self.tvm.runtime.vm.VirtualMachine(lib, dev)
+        return des_vm
 
     def __get_graph_module_from_relax_vm_lib(self, lib):
         _, dev = self._get_target_device()
@@ -225,7 +232,7 @@ class TVMConverter(metaclass=abc.ABCMeta):
     def __get_graph_module_from_relay_vm(self, mod, params, target, dev):
         vm = self.tvm.runtime.vm
         rly_vm = self.tvm.relay.vm
-        if self.mod_type == 'so' and self.params_type == 'ro':
+        if self.mod_type in ['so', 'tar'] and self.params_type == 'ro':
             executable = vm.Executable.load_exec(params, mod)
         else:
             with self.tvm.transform.PassContext(opt_level=self.opt_level):
