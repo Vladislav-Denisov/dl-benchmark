@@ -22,6 +22,7 @@ class TVMConverter(metaclass=abc.ABCMeta):
         self.target_str = args.get('target', None)
         self.module = args.get('module', None)
         self.high_level_api = args.get('high_level_api', None)
+        self.few_shot_tuning = args.get('few_shot_tuning', False)
 
         self.output_dir = args.get('output_dir', None)
         self.lib_name = args.get('lib_name', None)
@@ -155,9 +156,46 @@ class TVMConverter(metaclass=abc.ABCMeta):
         code, lib = executable.save()
         return code, lib
 
+    def _build_relax_vm_pipeline(self):
+        relax_transform = self.tvm.relax.transform
+
+        passes = [
+            relax_transform.LegalizeOps(),
+            relax_transform.AnnotateTIROpPattern(),
+            relax_transform.FoldConstant(),
+            relax_transform.FuseOps(),
+            relax_transform.FuseTIR(),
+        ]
+
+        if self.few_shot_tuning:
+            self.log.info('Applying FewShotTuning for Relax VM')
+            passes.append(relax_transform.FewShotTuning(valid_count=1, benchmark=False))
+
+        passes.extend([
+            relax_transform.RewriteDataflowReshape(),
+            relax_transform.ToNonDataflow(),
+            relax_transform.RemovePurityChecking(),
+            relax_transform.CallTIRRewrite(),
+            relax_transform.StaticPlanBlockMemory(),
+            relax_transform.LowerAllocTensor(),
+            relax_transform.KillAfterLastUse(),
+            relax_transform.LowerRuntimeBuiltin(),
+            relax_transform.ComputePrimValue(),
+            relax_transform.VMShapeLower(),
+            relax_transform.AttachGlobalSymbol(),
+        ])
+
+        @self.tvm.transform.module_pass(opt_level=0)
+        def pipeline(mod, _ctx):
+            return self.tvm.transform.Sequential(passes)(mod)
+
+        return pipeline
+
     def __get_lib_from_relax_vm(self, target, model):
+        pipeline = self._build_relax_vm_pipeline()
         with self.tvm.transform.PassContext(opt_level=self.opt_level):
-            lib = self.tvm.relax.build(model[0], target=target, params=model[1])
+            lib = self.tvm.relax.build(model[0], target=target, params=model[1],
+                                       pipeline=pipeline)
         return [lib]
 
     def export_lib(self):
@@ -196,8 +234,10 @@ class TVMConverter(metaclass=abc.ABCMeta):
         return des_vm
 
     def __get_graph_module_from_relax_vm(self, mod, params, target, dev):
+        pipeline = self._build_relax_vm_pipeline()
         with self.tvm.transform.PassContext(opt_level=self.opt_level):
-            executable = self.tvm.relax.build(mod, target=target, params=params)
+            executable = self.tvm.relax.build(mod, target=target, params=params,
+                                              pipeline=pipeline)
         des_vm = self.tvm.relax.VirtualMachine(executable, dev)
         return des_vm
 

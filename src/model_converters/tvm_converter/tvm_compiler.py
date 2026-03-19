@@ -47,6 +47,11 @@ def cli_argument_parser():
                         default='Relay',
                         type=str,
                         dest='high_level_api')
+    parser.add_argument('--few_shot_tuning',
+                        help='Apply FewShotTuning scheduling pass for RelaxVM '
+                             'to enable multi-threaded CPU inference.',
+                        action='store_true',
+                        dest='few_shot_tuning')
     args = parser.parse_args()
     return args
 
@@ -61,6 +66,7 @@ def create_dict_for_compilation(args):
         'lib_name': args.lib_name,
         'output_dir': args.output_dir,
         'high_level_api': args.high_level_api,
+        'few_shot_tuning': args.few_shot_tuning,
     }
     return dictionary
 

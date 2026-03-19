@@ -182,6 +182,7 @@ def create_dict_for_converter(args):
         'module': args.module,
         'high_level_api': args.high_level_api,
         'source_framework': args.source_framework,
+        'few_shot_tuning': getattr(args, 'few_shot_tuning', False),
     }
     return dictionary
 

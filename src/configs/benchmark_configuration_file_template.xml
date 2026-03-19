@@ -449,6 +449,7 @@
             <HighLevelAPI></HighLevelAPI>
             <Target></Target>
             <OptimizationLevel></OptimizationLevel>
+            <FewShotTuning></FewShotTuning> <!--True для RelaxVM: применяет FewShotTuning для многопоточного CPU-->
         </FrameworkDependent>
     </Test>
     <Test>
