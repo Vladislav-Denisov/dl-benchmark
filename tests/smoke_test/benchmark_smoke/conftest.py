@@ -215,10 +215,8 @@ def pytest_generate_tests(metafunc):
         param_list.append(smoke_test_params(**params))
         id_list.append(config_file.stem)
 
-    # Mark Caffe tests
+    # Mark tests
     for i, test_param in enumerate(param_list):
-        if test_param.config_name in ['googlenet-v1_Caffe', 'googlenet-v1_TVM_Caffe', 'googlenet-v1_TVM']:
-            param_list[i] = pytest.param(test_param, marks=pytest.mark.caffe)
         if test_param.config_name in ['dgl']:
             param_list[i] = pytest.param(test_param)
 
