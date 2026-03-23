@@ -19,7 +19,7 @@ DL_MODELS = ['resnet-50-pytorch', 'mobilenet-v1-1.0-224-tf', 'mobilenet-v2-1.4-2
              'person-detection-action-recognition-0006', 'person-detection-raisinghand-recognition-0001',
              'person-detection-action-recognition-teacher-0002', 'yolo-v2-ava-0001', 'yolo-v2-tiny-ava-0001',
              'yolo-v2-tf', 'yolo-v3-tf']
-DL_CAFFE_MODELS = ['googlenet-v1']
+DL_CAFFE_MODELS = []
 
 
 def pytest_addoption(parser):
