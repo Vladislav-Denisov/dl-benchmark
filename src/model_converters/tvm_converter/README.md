@@ -45,6 +45,10 @@ This script converts model from `<source_framework>` to the TVM format.
 - `-d / --device` is a target device for inference. It equals `CPU`
   by default.
 - `-op / --output_dir` is path to save the model.
+- `--high_level_api` is a high level API: `Relay`, `RelayVM`, `RelaxVM`.
+  It equals `Relay` by default.
+- `--few_shot_tuning` applies FewShotTuning scheduling pass for `RelaxVM`
+  to enable multi-threaded CPU inference. Disabled by default.
 
 ### Examples of usage
 
@@ -83,6 +87,8 @@ for the Relay API or to the `.so`+`.ro` format for the VirtualMachine API.
 - `-t / --target` is target device information, for example `llvm` for CPU.
 - `--opt_level` is the optimization level of the task extractions.
 - `--high_level_api` is a high level API: `Relay`, `RelayVM`, `RelaxVM`.
+- `--few_shot_tuning` applies FewShotTuning scheduling pass for `RelaxVM`
+  to enable multi-threaded CPU inference. Disabled by default.
 - `--lib_name` is a file name to save compiled model.
 - `-op / --output_dir` is a path to save the model.
 
@@ -95,5 +101,7 @@ python3 ./tvm_compiler.py -m efficientnet-b0.json -p efficientnet-b0.params \
 
 ```sh
 python3 ./tvm_compiler.py -m resnet50.json -p resnet50.params \
-                          -t llvm --opt_level 1 --lib_name resnet50.so
+                          -t "llvm -num-cores=16" --opt_level 3 \
+                          --high_level_api RelaxVM --few_shot_tuning \
+                          --lib_name resnet50.so
 ```

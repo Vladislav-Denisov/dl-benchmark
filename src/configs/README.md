@@ -357,6 +357,9 @@
   - `HighLevelAPI` - тег, необязательный для заполнения. Определяет используемое высокоуровневое API: `Relay`, `RelayVM` или `RelaxVM`. По умолчанию задается значение `Relay`.
   - `OptimizationLevel` - тег, необязательный для заполнения. Определяет уровень оптимизаций для
     графа вычислений, которые ускоряют инференс. По умолчанию оптимизации не применяются.
+  - `FewShotTuning` - тег, необязательный для заполнения. Применяет FewShotTuning — быструю
+    настройку расписаний ядер для многопоточного вывода на CPU. Допустимые значения: `True`, `False`.
+    Применимо только для `RelaxVM`. По умолчанию не установлен.
   - `Framework` - тег, обязательный для заполнения. Определяет фреймворк, модели которого будут
     запущены средствами Apache TVM. По умолчанию задается фреймворк `TVM`.
 
@@ -781,9 +784,10 @@
         <Std>0.229 0.224 0.225</Std>
         <ChannelSwap></ChannelSwap>
         <Layout>NCHW</Layout>
-        <Target>llvm</Target>
+        <Target>llvm -num-cores=4</Target>
         <HighLevelAPI>RelaxVM</HighLevelAPI>
         <OptimizationLevel>3</OptimizationLevel>
+        <FewShotTuning>True</FewShotTuning>
     </FrameworkDependent>
 </Test>
 ```

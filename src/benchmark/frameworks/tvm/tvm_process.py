@@ -77,12 +77,18 @@ class TVMProcess(ProcessHandler):
             common_params, '--opt_level', opt_level)
 
         target = self._test.dep_parameters.target
-        common_params = TVMProcess._add_optional_argument_to_cmd_line(
-            common_params, '--target', target)
+        if target:
+            common_params = TVMProcess._add_argument_to_cmd_line(
+                common_params, '--target', f'"{target}"')
 
         high_level_api = self._test.dep_parameters.high_level_api
         common_params = TVMProcess._add_optional_argument_to_cmd_line(
             common_params, '--high_level_api', high_level_api)
+
+        few_shot_tuning = self._test.dep_parameters.few_shot_tuning
+        if few_shot_tuning == 'True':
+            common_params = TVMProcess._add_flag_to_cmd_line(
+                common_params, '--few_shot_tuning')
 
         return f'{common_params}'
 

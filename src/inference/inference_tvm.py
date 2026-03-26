@@ -172,6 +172,11 @@ def cli_argument_parser():
                         default='Relay',
                         type=str,
                         dest='high_level_api')
+    parser.add_argument('--few_shot_tuning',
+                        help='Apply FewShotTuning scheduling pass for RelaxVM '
+                             'to enable multi-threaded CPU inference.',
+                        action='store_true',
+                        dest='few_shot_tuning')
     parser.add_argument('--raw_output',
                         help='Raw output without logs.',
                         default=False,

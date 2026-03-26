@@ -16,6 +16,7 @@ class TVMParametersParser(DependentParametersParser):
         CONFIG_FRAMEWORK_DEPENDENT_CHANNEL_SWAP_TAG = 'ChannelSwap'
         CONFIG_FRAMEWORK_DEPENDENT_LAYOUT_TAG = 'Layout'
         CONFIG_FRAMEWORK_DEPENDENT_HIGH_LEVEL_API = 'HighLevelAPI'
+        CONFIG_FRAMEWORK_DEPENDENT_FEW_SHOT_TUNING = 'FewShotTuning'
 
         dep_parameters_tag = curr_test.getElementsByTagName(CONFIG_FRAMEWORK_DEPENDENT_TAG)[0]
 
@@ -42,6 +43,10 @@ class TVMParametersParser(DependentParametersParser):
         _high_level_api = dep_parameters_tag.getElementsByTagName(
             CONFIG_FRAMEWORK_DEPENDENT_HIGH_LEVEL_API)[0].firstChild
 
+        _few_shot_tuning_tags = dep_parameters_tag.getElementsByTagName(
+            CONFIG_FRAMEWORK_DEPENDENT_FEW_SHOT_TUNING)
+        _few_shot_tuning = _few_shot_tuning_tags[0].firstChild if _few_shot_tuning_tags else None
+
         return TVMParameters(
             framework=_framework.data if _framework else None,
             input_name=_input_name.data if _input_name else None,
@@ -54,6 +59,7 @@ class TVMParametersParser(DependentParametersParser):
             layout=_layout.data if _layout else None,
             target=_target.data if _target else None,
             high_level_api=_high_level_api.data if _high_level_api else None,
+            few_shot_tuning=_few_shot_tuning.data if _few_shot_tuning else None,
         )
 
 
@@ -61,7 +67,7 @@ class TVMParameters(FrameworkParameters):
     def __init__(self, framework, input_name, input_shape,
                  normalize, mean, std, channel_swap,
                  optimization_level, layout, target,
-                 high_level_api):
+                 high_level_api, few_shot_tuning=None):
         self.framework = None
         self.input_name = None
         self.input_shape = None
@@ -73,6 +79,7 @@ class TVMParameters(FrameworkParameters):
         self.layout = None
         self.target = 'llvm'
         self.high_level_api = None
+        self.few_shot_tuning = None
 
         if self._framework_is_correct(framework):
             self.framework = framework
@@ -96,6 +103,8 @@ class TVMParameters(FrameworkParameters):
             self.target = target
         if self._parameter_is_not_none(high_level_api):
             self.high_level_api = high_level_api
+        if self._parameter_is_not_none(few_shot_tuning):
+            self.few_shot_tuning = few_shot_tuning
 
     @staticmethod
     def _framework_is_correct(framework):

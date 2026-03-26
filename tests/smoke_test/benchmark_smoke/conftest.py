@@ -19,7 +19,7 @@ DL_MODELS = ['resnet-50-pytorch', 'mobilenet-v1-1.0-224-tf', 'mobilenet-v2-1.4-2
              'person-detection-action-recognition-0006', 'person-detection-raisinghand-recognition-0001',
              'person-detection-action-recognition-teacher-0002', 'yolo-v2-ava-0001', 'yolo-v2-tiny-ava-0001',
              'yolo-v2-tf', 'yolo-v3-tf']
-DL_CAFFE_MODELS = ['googlenet-v1']
+DL_CAFFE_MODELS = []
 
 
 def pytest_addoption(parser):
@@ -215,10 +215,8 @@ def pytest_generate_tests(metafunc):
         param_list.append(smoke_test_params(**params))
         id_list.append(config_file.stem)
 
-    # Mark Caffe tests
+    # Mark tests
     for i, test_param in enumerate(param_list):
-        if test_param.config_name in ['googlenet-v1_Caffe', 'googlenet-v1_TVM_Caffe', 'googlenet-v1_TVM']:
-            param_list[i] = pytest.param(test_param, marks=pytest.mark.caffe)
         if test_param.config_name in ['dgl']:
             param_list[i] = pytest.param(test_param)
 

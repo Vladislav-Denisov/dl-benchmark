@@ -14,6 +14,8 @@ class TVMTest(Test):
         parameters.update({'Framework': self.dep_parameters.framework})
         parameters.update({'HighLevelAPI': self.dep_parameters.high_level_api})
         parameters.update({'Optimization level': self.dep_parameters.optimization_level})
+        if self.dep_parameters.few_shot_tuning == 'True':
+            parameters.update({'FewShotTuning': 'True'})
         other_param = self._get_optional_parameters_string(parameters)
 
         report_res = {
